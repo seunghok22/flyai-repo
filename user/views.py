@@ -1,94 +1,67 @@
-from rest_framework import status, permissions
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.decorators import permission_classes
-from .serializers import UserRegistrationSerializer, UserProfileSerializer
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from django.views import View
-from django.http import JsonResponse
-from django.contrib.auth import authenticate, login
-from rest_framework.permissions import AllowAny
+import os
+from dotenv import load_dotenv
+from django.shortcuts import redirect
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
-import json
+from rest_framework.response import Response
+from rest_framework import status
+from django.views.decorators.csrf import csrf_exempt
+from django.apps import apps
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 
-class UserRegistrationView(APIView):
-    permission_classes = (permissions.AllowAny,)
-    
-    def post(self, request):
-        serializer = UserRegistrationSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            return Response(
-                {"message": "User registered successfully"},
-                status=status.HTTP_201_CREATED
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class UserProfileView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def get(self, request):
-        serializer = UserProfileSerializer(request.user)
-        return Response(serializer.data)
-    
-    def put(self, request):
-        serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-@method_decorator(csrf_exempt, name='dispatch')
-class LoginView(View):
-    @permission_classes([AllowAny])
-    def post(self, request):
-        print(request.body)
-        try:
-            data = json.loads(request.body)
-            email = data.get('username')
-            password = data.get('password')
-            print(email)
-            print(password)
+User = get_user_model()
 
-            if not email or not password:
-                return JsonResponse({
-                    'error': 'Email and password are required.'
-                }, status=400)
-            print("auth")
-            
-            user = authenticate(request, username=email, password=password)
-            
-            if user is None:
-                return JsonResponse({
-                    'error': 'Invalid email or password.'
-                }, status=401)
+load_dotenv()
 
-            if not user.is_active:
-                return JsonResponse({
-                    'error': 'Please verify your email before logging in.'
-                }, status=403)
+GOOGLE_SCOPE_USERINFO = os.getenv("GOOGLE_SCOPE_USERINFO")
+GOOGLE_REDIRECT = os.getenv("GOOGLE_REDIRECT")
+GOOGLE_CALLBACK_URI = os.getenv("GOOGLE_CALLBACK_URI")
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
-            # # FCM 토큰 업데이트
-            # if fcm_token:
-            #     user.fcm_token = fcm_token
-            #     user.save()
+# 로그인 페이지 연결
+def google_login(request):
+   scope = GOOGLE_SCOPE_USERINFO        # + "https://www.googleapis.com/auth/drive.readonly" 등 scope 설정 후 자율적으로 추가
+   return redirect(f"{GOOGLE_REDIRECT}?client_id={GOOGLE_CLIENT_ID}&response_type=code&redirect_uri={GOOGLE_CALLBACK_URI}&scope={scope}")
 
-            # JWT 토큰 생성
-            refresh = RefreshToken.for_user(user)
-            tokens = {
-                'refresh_token': str(refresh),
-                'access_token': str(refresh.access_token),
-            }
+# 구글 토큰 -> jwt
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def google_callback(request):
+    print
+    token = request.data.get('id_token')
+    print(token)
+    try:
+        # Google의 ID 토큰 검증
+        idinfo = id_token.verify_oauth2_token(token, requests.Request(), GOOGLE_CLIENT_ID)
+        print(idinfo)
 
-            # 로그인 처리
-            login(request, user)
+        # 토큰에서 이메일 정보 추출
+        email = idinfo['email']
+        # 사용자 생성 또는 조회
+        user, created = User.objects.get_or_create(email=email)
+        
+        # 사용자 로그인 처리
+        # login(request, user)
+        if created:
+            user.save()
+        # JWT 토큰 생성
+        refresh = RefreshToken.for_user(user)
+        response_data = {
+            'refresh_token': str(refresh),
+            'access_token': str(refresh.access_token),
+        }
 
-            return JsonResponse(tokens, status=200)
+        if created:
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(response_data, status=status.HTTP_200_OK)
 
-        except Exception as e:
-            return JsonResponse({
-                'error': str(e)
-            }, status=500)
+    except ValueError as e:
+        print(str(e))
+        return Response({'error': 'Invalid token', 'details': str(e)}, status=status.HTTP_400_BAD_REQUEST)
