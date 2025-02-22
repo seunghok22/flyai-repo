@@ -28,7 +28,9 @@ SECRET_KEY = 'django-insecure-r&k1^m*!(e^gfvkeaybpguhaobcp%#=&-lv=8$d9q5dj4u(-!*
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    '13.209.11.189'
+    '13.125.200.102',
+    'localhost',
+    '127.0.0.1',
 ]
 CORS_ORIGIN_ALLOW_ALL = True # <- 모든 호스트 허용
 
