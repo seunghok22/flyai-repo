@@ -17,17 +17,17 @@ User = get_user_model()
 
 load_dotenv()
 
-# GOOGLE_SCOPE_USERINFO = os.getenv("GOOGLE_SCOPE_USERINFO")
-# GOOGLE_REDIRECT = os.getenv("GOOGLE_REDIRECT")
-# GOOGLE_CALLBACK_URI = os.getenv("GOOGLE_CALLBACK_URI")
+GOOGLE_SCOPE_USERINFO = os.getenv("GOOGLE_SCOPE_USERINFO")
+GOOGLE_REDIRECT = os.getenv("GOOGLE_REDIRECT")
+GOOGLE_CALLBACK_URI = os.getenv("GOOGLE_CALLBACK_URI")
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
 # 로그인 페이지 연결
-# def google_login(request):
-#    scope = GOOGLE_SCOPE_USERINFO        # + "https://www.googleapis.com/auth/drive.readonly" 등 scope 설정 후 자율적으로 추가
-#    return redirect(f"{GOOGLE_REDIRECT}?client_id={GOOGLE_CLIENT_ID}&response_type=code&redirect_uri={GOOGLE_CALLBACK_URI}&scope={scope}")
+def google_login(request):
+    scope = GOOGLE_SCOPE_USERINFO        # + "https://www.googleapis.com/auth/drive.readonly" 등 scope 설정 후 자율적으로 추가
+    return redirect(f"{GOOGLE_REDIRECT}?client_id={GOOGLE_CLIENT_ID}&response_type=code&redirect_uri={GOOGLE_CALLBACK_URI}&scope={scope}")
 
 # 구글 토큰 -> jwt
 @csrf_exempt
