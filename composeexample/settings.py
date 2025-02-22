@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-r&k1^m*!(e^gfvkeaybpguhaobcp%#=&-lv=8$d9q5dj4u(-!*
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    '*'
+    '13.209.11.189'
 ]
 CORS_ORIGIN_ALLOW_ALL = True # <- 모든 호스트 허용
 
@@ -99,7 +99,7 @@ DATABASES = {
         'NAME': os.getenv('POSTGRES_NAME'),
         'USER': os.getenv('POSTGRES_USER'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-        'HOST': 'database-1.c9aei624ezcq.ap-northeast-2.rds.amazonaws.com',
+        'HOST': os.getenv('POSTGRES_ENDPOINT'),
         'PORT': 5432,
     }
 }

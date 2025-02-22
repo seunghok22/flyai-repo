@@ -24,6 +24,7 @@ urlpatterns = [
     path('userprofile/' , include('userprofile.urls')),
     path('user/' , include('user.urls')),
     path('stt/', include('stt.urls')),
-]
+]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
 
 # 미디어 파일 제공 설정
