@@ -2,7 +2,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import UserProfileSerializer
 from django.shortcuts import get_object_or_404
+from django.http import Http404
 from .models import UserProfile
+
 
 def CreateProfile(request):
     try:
@@ -54,5 +56,23 @@ def LoadProfile(request):
             'data': serializer.data
         }, status=status.HTTP_200_OK)
      
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+def LoadProfileList(request):
+    try:
+        account_id = request.query_params.get('accountID')
+        if not account_id:
+            return Response({'error': 'accountID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        profiles = UserProfile.objects.filter(accountID=account_id)
+
+        if not profiles.exists():
+            raise Http404("No UserProfiles found with the given accountID")
+    
+        serializer = UserProfileSerializer(profiles)
+        return Response({
+            'message': 'successfull',
+            'data': serializer.data
+        },status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

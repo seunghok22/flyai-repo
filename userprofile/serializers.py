@@ -6,6 +6,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = (
             'userID',
+            'accountID'
             'category',
             'description',
             'tags',
@@ -21,6 +22,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance.category = validated_data.get('category', instance.category)
+        instance.accountID = validated_data.get('accountID', instance.accountID)
         instance.description = validated_data.get('description', instance.description)
         instance.tags = validated_data.get('tags', instance.tags)
         instance.recentChats = validated_data.get('recentChats', instance.recentChats)

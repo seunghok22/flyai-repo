@@ -8,6 +8,7 @@ class UserProfile(models.Model):
         blank=True,
         null=True
     )
+    accountID=models.TextField(),
     userID = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
