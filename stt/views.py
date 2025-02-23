@@ -8,6 +8,13 @@ import os
 class AudioProcessView(APIView):
     def post(self, request):
         try:
+            ## 전달받은 wav -> aws서버에 올라간 stt 모델 돌리기
+            ## 결과 형식: [{'audio': 'path/to/clip', 'time': '0.0-5.0', 'text': 'transcript'}, ...]
+            ## audio를 aws서버에 올라간 임베딩 모델로 돌리기
+            ## 결과 형식 [{embedding data}, {...}, {...}, ...]
+            ## 모든 userprofile 받아서 코싸인 비교해서 변환
+            ## 결과 형식: [{"userID":'userID', 'TIME': '0.0-5.0', "TEXT":"hello, my name is ..."}, {data}, {data}, ...]
+
             # 프론트에서 전달된 음성 파일 받기
             audio_file = request.FILES.get('audio')
             if not audio_file:
