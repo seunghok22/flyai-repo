@@ -4,8 +4,13 @@ from .serializers import UserProfileSerializer
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 from .models import UserProfile
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from django.views.decorators.csrf import csrf_exempt
 
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def CreateProfile(request):
     try:
         required_fields = ['category']
@@ -36,6 +41,8 @@ def CreateProfile(request):
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
 def LoadProfile(request):
     try:
         user_id = request.query_params.get('userID')
@@ -49,7 +56,9 @@ def LoadProfile(request):
         }, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def UpdateProfile(request):
     try:
         required_fields = ['userID']
@@ -83,6 +92,9 @@ def UpdateProfile(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+@api_view(['DELETE'])
+@permission_classes([AllowAny])
 def DeleteProfile(request):
     try:
         # 필수 파라미터 확인
@@ -112,6 +124,8 @@ def DeleteProfile(request):
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
 def LoadProfileList(request):
     try:
         account_id = request.query_params.get('accountID')
@@ -130,6 +144,8 @@ def LoadProfileList(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
 def LoadFromCategory(request):
     try:
         required_fields = ['accountID','category']
