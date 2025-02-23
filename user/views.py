@@ -36,7 +36,6 @@ def google_login(request):
 def google_callback(request):
     print
     token = request.data.get('id_token')
-    print(token)
     try:
         # Google의 ID 토큰 검증
         idinfo = id_token.verify_oauth2_token(token, requests.Request(), GOOGLE_CLIENT_ID)
