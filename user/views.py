@@ -48,8 +48,8 @@ def google_callback(request):
         print("decoded : ",decoded_token)
         uid = decoded_token.get("uid")
         print(uid)
-        email = decoded_token.get("email")
-        
+        email = uid.email
+        print(email)
 
         if not email:
             return JsonResponse({"error": "Invalid token"}, status=400)
