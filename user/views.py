@@ -31,7 +31,6 @@ def google_login(request):
     scope = GOOGLE_SCOPE_USERINFO        # + "https://www.googleapis.com/auth/drive.readonly" 등 scope 설정 후 자율적으로 추가
     return redirect(f"{GOOGLE_REDIRECT}?client_id={GOOGLE_CLIENT_ID}&response_type=code&redirect_uri={GOOGLE_CALLBACK_URI}&scope={scope}")
 
-# 구글 토큰 -> jwt
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -39,6 +38,8 @@ def google_callback(request):
     try:
         data = json.loads(request.body)
         id_token = data.get("id_token")
+        print("id  : ", id_token)
+        # id token -> email, access, refresh, 
 
         if not id_token:
             return JsonResponse({"error": "Missing id_token"}, status=400)
@@ -46,6 +47,7 @@ def google_callback(request):
         # Firebase에서 ID Token 검증
         decoded_token = auth.verify_id_token(id_token)
         email = decoded_token.get("email")
+        print("decoded : ",decoded_token)
 
         if not email:
             return JsonResponse({"error": "Invalid token"}, status=400)

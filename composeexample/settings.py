@@ -106,7 +106,7 @@ DATABASES = {
         'NAME': os.getenv('POSTGRES_NAME'),
         'USER': os.getenv('POSTGRES_USER'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-        'HOST': os.getenv('POSTGRES_ENDPOINT'),
+        'HOST':os.getenv('POSTGRES_ENDPOINT'),
         'PORT': 5432,
     }
 }
