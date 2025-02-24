@@ -47,9 +47,8 @@ def google_callback(request):
         decoded_token = auth.verify_id_token(id_token)
         print("decoded : ",decoded_token)
         uid = decoded_token.get("uid")
-        print(uid)
         email = uid.email
-        print(email)
+        email2 = decoded_token.get("email")
 
         if not email:
             return JsonResponse({"error": "Invalid token"}, status=400)
@@ -62,9 +61,9 @@ def google_callback(request):
             "email": user.email,
             "is_new_user": created
         })
-
+    except auth.ExpiredIdTokenError:
+        return JsonResponse({"error": "ID token has expired. Please obtain a new token."}, status=401)
     except auth.InvalidIdTokenError:
         return JsonResponse({"error": "Invalid ID Token"}, status=401)
-
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
