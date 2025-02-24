@@ -11,18 +11,12 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import firebase_admin
 from firebase_admin import credentials
-import os
-
-BASE_DIR = os.path.dirname(__file__)
-service_account_path = os.path.join(BASE_DIR, 'serviceAccountKey.json')
-
-cred = credentials.Certificate(service_account_path)
+cred = credentials.Certificate("/home/ubuntu/myproject/flyai-repo/serviceAccountKey.json")
 
 firebase_admin.initialize_app(cred)
 
-from pathlib import Path
-
 from datetime import timedelta
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
