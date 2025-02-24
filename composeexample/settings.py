@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import firebase_admin
 from firebase_admin import credentials
+import os
 
 BASE_DIR = os.path.dirname(__file__)
 service_account_path = os.path.join(BASE_DIR, 'serviceAccountKey.json')
@@ -20,7 +21,7 @@ cred = credentials.Certificate(service_account_path)
 firebase_admin.initialize_app(cred)
 
 from pathlib import Path
-import os
+
 from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
