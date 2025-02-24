@@ -46,6 +46,8 @@ def google_callback(request):
         # Firebase에서 ID Token 검증
         decoded_token = auth.verify_id_token(id_token)
         print("decoded : ",decoded_token)
+        uid = decoded_token.get("uid")
+        print(uid)
         email = decoded_token.get("email")
         
 
