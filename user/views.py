@@ -11,7 +11,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.apps import apps
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
-
+from firebase_admin import auth
+from django.http import JsonResponse
+import json
 
 User = get_user_model()
 
@@ -34,34 +36,31 @@ def google_login(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def google_callback(request):
-    print
-    token = request.data.get('id_token')
     try:
-        # Google의 ID 토큰 검증
-        idinfo = id_token.verify_oauth2_token(token, requests.Request(), GOOGLE_CLIENT_ID)
-        print(idinfo)
+        data = json.loads(request.body)
+        id_token = data.get("id_token")
 
-        # 토큰에서 이메일 정보 추출
-        email = idinfo['email']
-        # 사용자 생성 또는 조회
+        if not id_token:
+            return JsonResponse({"error": "Missing id_token"}, status=400)
+
+        # Firebase에서 ID Token 검증
+        decoded_token = auth.verify_id_token(id_token)
+        email = decoded_token.get("email")
+
+        if not email:
+            return JsonResponse({"error": "Invalid token"}, status=400)
+
+        # 기존 유저 확인 or 생성
         user, created = User.objects.get_or_create(email=email)
-        
-        # 사용자 로그인 처리
-        # login(request, user)
-        if created:
-            user.save()
-        # JWT 토큰 생성
-        refresh = RefreshToken.for_user(user)
-        response_data = {
-            'refresh_token': str(refresh),
-            'access_token': str(refresh.access_token),
-        }
 
-        if created:
-            return Response(response_data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(response_data, status=status.HTTP_200_OK)
+        return JsonResponse({
+            "message": "Login successful",
+            "email": user.email,
+            "is_new_user": created
+        })
 
-    except ValueError as e:
-        print(str(e))
-        return Response({'error': 'Invalid token', 'details': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except auth.InvalidIdTokenError:
+        return JsonResponse({"error": "Invalid ID Token"}, status=401)
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

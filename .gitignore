@@ -66,3 +66,4 @@ logs/
 *.pid
 celerybeat-schedule
 *.rdb  # Redis database file
+serviceAccountKey.json
