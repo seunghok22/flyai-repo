@@ -1,8 +1,6 @@
 import os
 from dotenv import load_dotenv
 from django.shortcuts import redirect
-from google.oauth2 import id_token
-from google.auth.transport import requests
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
@@ -14,6 +12,8 @@ from rest_framework.permissions import AllowAny
 from firebase_admin import auth
 from django.http import JsonResponse
 import json
+import firebase_admin
+from firebase_admin import credentials, initialize_app
 
 User = get_user_model()
 
@@ -36,25 +36,33 @@ def google_login(request):
 @permission_classes([AllowAny])
 def google_callback(request):
     try:
+        service_account_path = "/home/ubuntu/myproject/flyai-repo/serviceAccountKey.json"
+        if not firebase_admin._apps:
+            cred = credentials.Certificate(service_account_path)
+            initialize_app(cred)
+            message = "Firebase 서비스 계정 키가 정상적으로 로드되어 Firebase가 초기화되었습니다."
+        else:
+            message = "Firebase가 이미 초기화되어 있습니다."
+        
         data = json.loads(request.body)
         id_token = data.get("id_token")
         # id token -> email, access, refresh, 
-        print(auth)
         if not id_token:
             return JsonResponse({"error": "Missing id_token"}, status=400)
 
         # Firebase에서 ID Token 검증
         decoded_token = auth.verify_id_token(id_token)
-        print("decoded : ",decoded_token)
         uid = decoded_token.get("uid")
         email = uid.email
         email2 = decoded_token.get("email")
 
         if not email:
-            return JsonResponse({"error": "Invalid token"}, status=400)
-
-        # 기존 유저 확인 or 생성
-        user, created = User.objects.get_or_create(email=email)
+            if not email2:
+                return JsonResponse({"error": "Invalid token"}, status=400)
+            else:
+                user, created = User.objects.get_or_create(email=email2)
+        else:
+            user, created = User.objects.get_or_create(email=email)
 
         return JsonResponse({
             "message": "Login successful",
