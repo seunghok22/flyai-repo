@@ -8,7 +8,15 @@ class UserProfile(models.Model):
         blank=True,
         null=True
     )
-    accountID=models.TextField(),
+    voiceVector = ArrayField(
+            models.FloatField(),
+            blank=True,
+            null=True
+            )
+    accountID=models.TextField(
+            blank=True,
+            null=True,
+            )
     userID = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -34,12 +42,12 @@ class UserProfile(models.Model):
         models.TextField(max_length=100),
         blank=True,
         null=True
-    )
+        )
     characterstics= ArrayField(
-        models.TextField(),
-        blank=True,
-        null=True
-    )
+            models.TextField(),
+            blank=True,
+            null=True
+            )
     additionalInfo = models.JSONField(default=dict)
     
     class Meta:

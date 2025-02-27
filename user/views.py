@@ -36,41 +36,20 @@ def google_login(request):
 @permission_classes([AllowAny])
 def google_callback(request):
     try:
-        service_account_path = "/home/ubuntu/myproject/flyai-repo/serviceAccountKey.json"
-        if not firebase_admin._apps:
-            cred = credentials.Certificate(service_account_path)
-            initialize_app(cred)
-            message = "Firebase 서비스 계정 키가 정상적으로 로드되어 Firebase가 초기화되었습니다."
-        else:
-            message = "Firebase가 이미 초기화되어 있습니다."
-        
-        data = json.loads(request.body)
-        id_token = data.get("id_token")
-        # id token -> email, access, refresh, 
-        if not id_token:
-            return JsonResponse({"error": "Missing id_token"}, status=400)
-
-        # Firebase에서 ID Token 검증
-        decoded_token = auth.verify_id_token(id_token)
-        uid = decoded_token.get("uid")
-        email = uid.email
-        email2 = decoded_token.get("email")
+        email = json.loads(request.body)
 
         if not email:
-            if not email2:
-                return JsonResponse({"error": "Invalid token"}, status=400)
-            else:
-                user, created = User.objects.get_or_create(email=email2)
-        else:
-            user, created = User.objects.get_or_create(email=email)
+            return JsonResponse({"error": "Invalid mail"}, status=400)
+        
+        user, created = User.objects.get_or_create(email=email)
 
-        return JsonResponse({
-            "message": "Login successful",
-            "email": user.email,
-            "is_new_user": created
-        })
-    except auth.ExpiredIdTokenError:
-        return JsonResponse({"error": "ID token has expired. Please obtain a new token."}, status=401)
+        refresh = RefreshToken.for_user(user)
+        response_data = {
+            'refresh_token': str(refresh),
+            'access_token': str(refresh.access_token),
+        }
+        return Response(response_data,status=status.HTTP_200_OK)
+    
     except auth.InvalidIdTokenError:
         return JsonResponse({"error": "Invalid ID Token"}, status=401)
     except Exception as e:

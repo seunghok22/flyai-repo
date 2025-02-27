@@ -5,12 +5,12 @@ from django.shortcuts import get_object_or_404
 from django.http import Http404
 from .models import UserProfile
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.views.decorators.csrf import csrf_exempt
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def CreateProfile(request):
     try:
         required_fields = ['category']
@@ -21,31 +21,31 @@ def CreateProfile(request):
             }, status=status.HTTP_400_BAD_REQUEST)
         profile_data = {
             'category': request.data.get('category', []),
-            'accountID': request.data.get('accountID'),
             'description': request.data.get('description', []),
             'tags': request.data.get('tags', []),
             'recentChats': request.data.get('recentChats', []),
             'prefor': request.data.get('prefor', []),
-            'characterstics': request.data.get('characterstics', []),
-            'additionalInfo': request.data.get('additionalInfo', {})
-        }
+            'voiceVector': request.data.get('voiceVector',[]),
+            'additionalInfo': request.data.get('additionalInfo', {}),
+            'accountID':{"email":request.user.email}.get("id_token"),
+            'characterstics':request.data.get('characterstics',{}),
+            }
         # UserProfile 생성
         serializer = UserProfileSerializer(data=profile_data)
-        serializer.save()
-        return Response({
-            'message': 'UserProfile created successfully',
-            'data': {'userID' : serializer.data['userID']}
-        }, status=status.HTTP_201_CREATED)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'message': 'UserProfile created successfully',
+                'data': {'userID' : serializer.data['userID']}
+            }, status=status.HTTP_201_CREATED)
     except Exception as e:
-        return Response({
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def LoadProfile(request):
     try:
-        user_id = request.query_params.get('userID')
+        user_id = request.data.get('userID')
         if not user_id:
             return Response({'error': 'userID is required'}, status=status.HTTP_400_BAD_REQUEST)
         profile = get_object_or_404(UserProfile, userID=user_id)
@@ -61,23 +61,21 @@ def LoadProfile(request):
 @permission_classes([AllowAny])
 def UpdateProfile(request):
     try:
-        required_fields = ['userID']
-        if not all(field in request.data for field in required_fields):
-            return Response({
-                'error': 'Missing required fields',
-                'required': required_fields
-            }, status=status.HTTP_400_BAD_REQUEST)
-        user_profile = UserProfile.objects.get(userID=request.data['userID'])
-        profile_data = {
-            'category': request.data.get('category', []),
-            'accountID': request.data.get('accountID'),
-            'description': request.data.get('description', []),
-            'tags': request.data.get('tags', []),
-            'recentChats': request.data.get('recentChats', []),
-            'prefor': request.data.get('prefor', []),
-            'characterstics': request.data.get('characterstics', []),
-            'additionalInfo': request.data.get('additionalInfo', {})
-        }
+        user_id = request.data.get('userID')
+        if not user_id:
+            return Response({'error': "userID is required"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user_profile = UserProfile.objects.get(userID=user_id)
+        except UserProfile.DoesNotExist:
+            return Response({'error': "userID does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+        update_data ={'voiceVector', 'category', 'accountID', 'description','tags', 'recentChats', 'prefor', 'additionalInfo', 'characterstics'}
+        profile_data ={}
+
+        for field in update_data:
+            if field in request.data:
+                profile_data[field] = request.data[field]
+
         serializer = UserProfileSerializer(instance=user_profile, data=profile_data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -94,29 +92,23 @@ def UpdateProfile(request):
 
 
 @api_view(['DELETE'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def DeleteProfile(request):
     try:
-        # 필수 파라미터 확인
-        user_id = request.query_params.get('userID')
-        if not user_id:
-            return Response({
-                'error': 'userID is required'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        # accountID와 userID 모두 일치하는 프로필 찾기
-        profile = UserProfile.objects.filter(
-            userID=user_id
-        ).first()
-        if not profile:
+        account_id={"email":request.user.email}.get("id_token")
+
+        profiles = UserProfile.objects.filter(
+            accountID=account_id)
+        if not profiles:
             return Response({
                 'error': 'Profile not found'
             }, status=status.HTTP_404_NOT_FOUND)
         # 프로필 삭제
-        profile.delete()
+        profiles.delete()
         return Response({
-            'message': 'Profile successfully deleted',
+            'message': 'Profiles successfully deleted',
             'data': {
-                'userID': user_id
+                'accountID': account_id
             }
         }, status=status.HTTP_200_OK)
     except Exception as e:
@@ -125,18 +117,16 @@ def DeleteProfile(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def LoadProfileList(request):
     try:
-        account_id = request.query_params.get('accountID')
-        if not account_id:
-            return Response({'error': 'accountID is required'}, status=status.HTTP_400_BAD_REQUEST)
-        profiles = UserProfile.objects.filter(accountID=account_id)
+        account_id ={"email": request.user.email}.get("id_token")
+        profiles = UserProfile.objects.filter(accountID=account_id).only('userID', 'category', 'tags')
 
         if not profiles.exists():
             raise Http404("No UserProfiles found with the given accountID")
     
-        serializer = UserProfileSerializer(profiles)
+        serializer = UserProfileSerializer(profiles, many=True)
         return Response({
             'message': 'successfull',
             'data': serializer.data
@@ -145,16 +135,16 @@ def LoadProfileList(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def LoadFromCategory(request):
     try:
-        required_fields = ['accountID','category']
+        required_fields = ['category']
         if not all(field in request.data for field in required_fields):
             return Response({
                 'error': 'Missing required fields',
                 'required': required_fields
             }, status=status.HTTP_400_BAD_REQUEST)
-        account_id = request.query_params.get('accountID')
+        account_id = JsonResponse({"email": request.user.email})
         category = request.query_params.get('category')
         profiles = UserProfile.objects.filter(
             accountID=account_id,

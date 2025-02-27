@@ -51,7 +51,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'userprofile',
     'user',
-    'stt',
+    'jsonhandle',
+    'character',
     'rest_framework',
     'rest_framework_simplejwt',
 ]
@@ -187,8 +188,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # # image
-# MEDIA_URL = '/media/'
-# MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # SIMPLE_JWT = {
 #     'USER_ID_FIELD': 'email',  # 실제 사용 중인 기본키 필드명으로 변경

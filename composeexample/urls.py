@@ -23,7 +23,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('userprofile/' , include('userprofile.urls')),
     path('user/' , include('user.urls')),
-    path('stt/', include('stt.urls')),
+    path('jsonhandle/', include('jsonhandle.urls')),
+    path('character/',include('character.urls')),
+
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
